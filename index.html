@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Network Monitoring Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- "defer" runs the script only after the whole page has been read -->
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <!-- ============ ICON NAVIGATION ============ -->
+  <nav class="rail" aria-label="Main navigation">
+    <a href="#dashboard" class="active" aria-label="Dashboard" title="Dashboard">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+    </a>
+    <a href="#analysis" aria-label="Analysis" title="Analysis">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-5M10 20v-8M15 20V9M20 20V4"/></svg>
+    </a>
+    <a href="#concepts" aria-label="Concepts" title="Concepts">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 13l-5 4M12 13l5 4"/><circle cx="12" cy="5.5" r="2.5"/><circle cx="5" cy="18.5" r="2.5"/><circle cx="19" cy="18.5" r="2.5"/></svg>
+    </a>
+    <a href="#formulas" aria-label="Formulas" title="Formulas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+    </a>
+    <a href="#tests" aria-label="Tests" title="Tests">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM8.5 12l2.5 2.5 4.5-5"/></svg>
+    </a>
+  </nav>
+
+  <main>
+
+    <!-- ============ HEADER ============ -->
+    <header class="page-head" id="dashboard">
+      <div>
+        <h1>Network Monitoring Dashboard</h1>
+        <p>Estimates from the numbers you enter. This is a simulator, not a real-time monitor.</p>
+      </div>
+      <div class="head-tools">
+        <span class="pill"><i></i>Estimation mode</span>
+        <!-- Each option number is a position in the testCases list in script.js -->
+        <select id="exampleSelect" aria-label="Load an example">
+          <option value="">Load an example</option>
+          <option value="0">10 users (40%)</option>
+          <option value="1">20 users (80%)</option>
+          <option value="2">25 users (100%)</option>
+          <option value="3">30 users (120%)</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- script.js changes data-level to: empty, healthy, near or overloaded -->
+    <div class="board" id="board" data-level="empty">
+
+      <!-- ============ SUMMARY CARDS ============ -->
+      <section class="card summary cyan" aria-label="Estimated total demand">
+        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span>
+        <h2>Estimated demand</h2>
+        <p class="value" id="demandValue">—</p>
+        <p class="hint">Users × bandwidth</p>
+        <div class="mini-bars" id="demandMini" aria-hidden="true"></div>
+      </section>
+
+      <section class="card summary purple" aria-label="Available network capacity">
+        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 13l-5 4M12 13l5 4"/><circle cx="12" cy="5.5" r="2.5"/><circle cx="5" cy="18.5" r="2.5"/><circle cx="19" cy="18.5" r="2.5"/></svg></span>
+        <h2>Available capacity</h2>
+        <p class="value" id="capacityValue">—</p>
+        <p class="hint">Entered by you</p>
+        <div class="mini-bars" id="capacityMini" aria-hidden="true"></div>
+      </section>
+
+      <section class="card summary level-colour" aria-label="Estimated utilisation">
+        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-5M10 20v-8M15 20V9M20 20V4"/></svg></span>
+        <h2>Estimated utilisation</h2>
+        <p class="value" id="utilisationValue">—</p>
+        <p class="hint">Share of capacity</p>
+        <div class="mini-bars" id="utilisationMini" aria-hidden="true"></div>
+      </section>
+
+      <section class="card summary green" id="remainingCard" aria-labelledby="remainingTitle">
+        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM8.5 12l2.5 2.5 4.5-5"/></svg></span>
+        <h2 id="remainingTitle">Estimated remaining</h2>
+        <p class="value" id="remainingValue">—</p>
+        <p class="hint" id="remainingHint">Capacity − demand</p>
+        <div class="mini-bars" id="remainingMini" aria-hidden="true"></div>
+      </section>
+
+      <!-- ============ INPUT FORM ============ -->
+      <section class="card form-card" aria-labelledby="inputHeading">
+        <h2 id="inputHeading">Network details</h2>
+        <p class="sub">Values at the busiest time</p>
+
+        <!-- "novalidate" turns off the browser's own messages so script.js can show ours -->
+        <form id="calculatorForm" novalidate>
+          <div class="field">
+            <label for="users">Number of active users</label>
+            <div class="input-box">
+              <input type="number" id="users" min="1" step="1" inputmode="numeric"
+                     placeholder="e.g. 20" autocomplete="off" aria-describedby="usersError">
+              <span>users</span>
+            </div>
+            <p class="error" id="usersError"></p>
+          </div>
+
+          <div class="field">
+            <label for="bandwidth">Estimated bandwidth per user</label>
+            <div class="input-box">
+              <input type="number" id="bandwidth" min="0.01" step="any" inputmode="decimal"
+                     placeholder="e.g. 2" autocomplete="off" aria-describedby="bandwidthError">
+              <span>Mbps</span>
+            </div>
+            <p class="error" id="bandwidthError"></p>
+          </div>
+
+          <div class="field">
+            <label for="capacity">Available internet link capacity</label>
+            <div class="input-box">
+              <input type="number" id="capacity" min="0.01" step="any" inputmode="decimal"
+                     placeholder="e.g. 50" autocomplete="off" aria-describedby="capacityError">
+              <span>Mbps</span>
+            </div>
+            <p class="error" id="capacityError"></p>
+          </div>
+
+          <div class="buttons">
+            <button type="submit" class="button primary">Calculate</button>
+            <button type="button" class="button" id="resetButton">Reset</button>
+          </div>
+          <p class="stale-note" id="staleNote" hidden>Inputs changed. Press Calculate to update.</p>
+        </form>
+      </section>
+
+      <!-- ============ LINE CHART ============ -->
+      <section class="card line-card" aria-labelledby="lineHeading">
+        <div class="card-head">
+          <div>
+            <h2 id="lineHeading">Demand as users grow</h2>
+            <p class="sub">Estimated bandwidth needed for each number of users</p>
+          </div>
+          <ul class="legend nowrap">
+            <li><i class="cyan"></i>Demand</li>
+            <li><i class="purple"></i>Capacity</li>
+            <li><i class="green"></i>80% limit</li>
+          </ul>
+        </div>
+
+        <div class="plot line-plot" id="linePlot">
+          <div class="axis" id="lineAxisY" aria-hidden="true"></div>
+          <div class="axis" id="lineAxisX" aria-hidden="true"></div>
+
+          <!-- The drawing area is 100 by 100, so positions are simply percentages -->
+          <svg class="lines" id="lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" hidden>
+            <defs>
+              <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6cc9fb" stop-opacity="0.35"/>
+                <stop offset="1" stop-color="#6cc9fb" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <polygon id="demandArea" fill="url(#fade)"/>
+            <line id="healthyLine" class="green" x1="0" x2="100"/>
+            <line id="capacityLine" class="purple" x1="0" x2="100"/>
+            <line id="demandLine" class="cyan" x1="0" y1="100" x2="100"/>
+          </svg>
+
+          <div class="marker-line" id="markerLine" hidden></div>
+          <div class="marker" id="marker" hidden></div>
+          <div class="bubble" id="bubble" hidden></div>
+        </div>
+        <label class="slider" for="userSlider">
+          <span>Explore users</span>
+          <input type="range" id="userSlider" min="1" max="40" step="1" value="1" disabled>
+        </label>
+      </section>
+
+      <!-- ============ DONUT + STATUS ============ -->
+      <section class="card donut-card" aria-labelledby="statusHeading">
+        <div class="card-head">
+          <div>
+            <h2 id="statusHeading">Network status</h2>
+            <p class="sub">Estimated share of the link in use</p>
+          </div>
+        </div>
+        <div class="donut">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="outline" cx="60" cy="60" r="57"/>
+            <circle class="track" cx="60" cy="60" r="47"/>
+            <!-- pathLength="100" lets the ring be filled using percentages -->
+            <circle class="ring" id="ring" cx="60" cy="60" r="47" pathLength="100" stroke-dasharray="0 100"/>
+            <circle class="outline" cx="60" cy="60" r="37"/>
+          </svg>
+          <div class="donut-text">
+            <strong id="bigUtilisation">—</strong>
+            <span>Est. utilisation</span>
+          </div>
+        </div>
+        <div class="status-badge">
+          <span class="status-icon" id="statusIcon" aria-hidden="true">–</span>
+          <span id="statusLabel">Awaiting input</span>
+        </div>
+      </section>
+
+      <!-- ============ BAR CHART ============ -->
+      <section class="card third" id="analysis" aria-labelledby="chartHeading">
+        <h2 id="chartHeading">Demand vs capacity</h2>
+        <p class="sub" id="chartSummary">Press Calculate to see the comparison.</p>
+        <div class="plot bar-plot">
+          <div class="axis" id="barAxisY" aria-hidden="true"></div>
+          <!-- tabindex="0" lets keyboard users focus a bar to see its tooltip -->
+          <div class="column" id="demandColumn" tabindex="0">
+            <div class="bar cyan" id="demandBar"><span class="bar-value" id="demandBarValue">—</span></div>
+          </div>
+          <div class="column" id="healthyColumn" tabindex="0">
+            <div class="bar green" id="healthyBar"><span class="bar-value" id="healthyBarValue">—</span></div>
+          </div>
+          <div class="column" id="capacityColumn" tabindex="0">
+            <div class="bar purple" id="capacityBar"><span class="bar-value" id="capacityBarValue">—</span></div>
+          </div>
+          <div class="bubble" id="barTooltip" role="status" hidden></div>
+        </div>
+        <div class="bar-names" aria-hidden="true">
+          <span>Est. demand</span><span>80% limit</span><span>Capacity</span>
+        </div>
+        <p class="unit-note">Mbps. Hover over, tap or tab to a bar for details.</p>
+      </section>
+
+      <!-- ============ PROGRESS BAR + WARNING ============ -->
+      <section class="card third" aria-labelledby="meterHeading">
+        <h2 id="meterHeading">Utilisation level</h2>
+        <p class="sub">Healthy below 80%, overloaded above 100%</p>
+
+        <!-- The bar runs from 0% to 150% so that an overload is still visible -->
+        <div class="meter" id="meter" role="meter" aria-label="Estimated utilisation"
+             aria-valuemin="0" aria-valuemax="150" aria-valuenow="0" aria-valuetext="No result yet">
+          <div class="meter-fill" id="meterFill"></div>
+          <span class="meter-line at-80"></span>
+          <span class="meter-line at-100"></span>
+        </div>
+        <div class="meter-scale" aria-hidden="true">
+          <span class="at-0">0%</span><span class="at-80">80%</span>
+          <span class="at-100">100%</span><span class="at-150">150%+</span>
+        </div>
+
+        <!-- aria-live makes screen readers announce the new message -->
+        <div aria-live="polite">
+          <p class="warning" id="warningMessage">Enter the network details and press Calculate.</p>
+          <p class="action"><span>Recommended action</span><strong id="mainAction">—</strong></p>
+        </div>
+      </section>
+
+      <!-- ============ RECOMMENDATIONS ============ -->
+      <section class="card third" aria-labelledby="recommendHeading">
+        <h2 id="recommendHeading">Recommendations</h2>
+        <p class="sub">Practical steps based on this estimate</p>
+        <ul class="recommendations" id="recommendationList">
+          <li>Press Calculate to see recommendations.</li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- ============ CONCEPTS ============ -->
+    <section class="section" id="concepts" aria-labelledby="conceptsHeading">
+      <h2 id="conceptsHeading">Networking concepts</h2>
+      <p class="sub">Think of the internet link as a road and data as the cars using it.</p>
+      <div class="concepts">
+        <article class="card cyan">
+          <h3>Bandwidth</h3>
+          <p>The maximum rate at which data could travel, measured in Mbps.</p>
+          <p class="analogy">How many lanes the road has.</p>
+        </article>
+        <article class="card purple">
+          <h3>Throughput</h3>
+          <p>The rate at which data really gets through. It is usually lower than bandwidth.</p>
+          <p class="analogy">How many cars actually pass each minute.</p>
+        </article>
+        <article class="card orange">
+          <h3>Congestion</h3>
+          <p>When demand is more than the link can carry, causing delay, queues and lost packets.</p>
+          <p class="analogy">A traffic jam at rush hour.</p>
+        </article>
+        <article class="card green">
+          <h3>Capacity</h3>
+          <p>The total bandwidth available on the office link for everyone to share.</p>
+          <p class="analogy">The most traffic the road can hold.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ FORMULAS ============ -->
+    <section class="section" id="formulas" aria-labelledby="formulasHeading">
+      <h2 id="formulasHeading">How the estimate is calculated</h2>
+      <div class="formula-grid">
+        <div class="card cyan">
+          <h3>Estimated demand</h3>
+          <p>Users × Bandwidth per user</p>
+          <code id="workingDemand">Waiting for values</code>
+        </div>
+        <div class="card orange">
+          <h3>Estimated utilisation</h3>
+          <p>(Demand ÷ Capacity) × 100</p>
+          <code id="workingUtilisation">Waiting for values</code>
+        </div>
+        <div class="card green">
+          <h3>Estimated remaining bandwidth</h3>
+          <p>Capacity − Demand</p>
+          <code id="workingRemaining">Waiting for values</code>
+        </div>
+      </div>
+      <ul class="legend levels">
+        <li><i class="green"></i>Healthy: below 80%</li>
+        <li><i class="orange"></i>Near capacity: 80% to 100%</li>
+        <li><i class="red"></i>Overloaded: above 100%</li>
+      </ul>
+    </section>
+
+    <!-- ============ TESTS ============ -->
+    <section class="section" id="tests" aria-labelledby="testsHeading">
+      <div class="card-head">
+        <div>
+          <h2 id="testsHeading">Built-in tests</h2>
+          <p class="sub" id="testSummary">Runs the same validation and calculation functions used by the dashboard.</p>
+        </div>
+        <button type="button" class="button primary" id="runTestsButton">Run all tests</button>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Test</th><th scope="col">Users</th><th scope="col">Mbps per user</th>
+              <th scope="col">Capacity</th><th scope="col">Expected</th><th scope="col">Actual</th><th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody id="testRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>Network capacity estimation simulator. All calculated values are estimates. It does not perform real-time monitoring.</footer>
+  </main>
+
+  <noscript>This dashboard needs JavaScript to perform its calculations.</noscript>
+</body>
+</html>
